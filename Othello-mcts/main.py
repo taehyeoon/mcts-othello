@@ -72,7 +72,7 @@ class Game_Engine(object):
                         pass
             if self.game.changed:
                 # drawBoard에서 게임 종료메시지 출력
-                # Othello의 victory 변수를 통해서 게임 종료 체크
+        # Othello의 victory 변수를 통해서 게임 종료 체크
                 self.drawBoard()
                 self.game.changed = False
 
@@ -97,7 +97,7 @@ class Game_Engine(object):
         menu = pygame.Rect(0, 8 * BLOCK_SIZE, WINDOW_WIDTH, 20)
         pygame.draw.rect(self.screen, (255, 255, 255), menu)
         self.menuFont = pygame.font.SysFont("comicsansms", 15)
-        self.drawText("Rest₩art", self.menuFont, self.screen, WINDOW_WIDTH / 2 - 80, 8 * BLOCK_SIZE - 1, (0, 0, 0))
+        self.drawText("Restart", self.menuFont, self.screen, WINDOW_WIDTH / 2 - 80, 8 * BLOCK_SIZE - 1, (0, 0, 0))
         self.drawText("Exit", self.menuFont, self.screen, WINDOW_WIDTH / 2 + 20, 8 * BLOCK_SIZE - 1, (0, 0, 0))
 
         # draw blocks and tiles

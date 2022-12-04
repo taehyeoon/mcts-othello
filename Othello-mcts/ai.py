@@ -24,7 +24,10 @@ class GameAI(object):
 		Return the optimal move within limited resources. 
 	"""
 	def miniMax(self, board):
+		# 뒤집을 수 있는 돌의 최대 개수
 		optimalFlipping = 0
+
+		# 각 모서리를 우선적으로 탐색하여 4개의 모서리 중 가장 많은 돌을 뒤집을 수 있는 위치를 action으로 선택
 		if board[0][0] == 0:
 			flippingAtCorner = self.game.placePiece(board, 0, 0, 2, PLAYMODE=False)
 			if flippingAtCorner > optimalFlipping:
@@ -54,6 +57,8 @@ class GameAI(object):
 		optimalMove = (-1, -1)
 		optimalBoard = board
 		stopDigging = False
+
+		# 멈추는 한계 depth까지 오지 않고, 시간이 초과되지 않는 동안 반복 탐색
 		while not stopDigging and timeElapsed < self.timeLimit:
 			(stopDigging, optimalBoard) = self.IDMiniMax(board, 0, depth, 2, -math.inf, math.inf);
 			endTime = time.time()
@@ -62,6 +67,7 @@ class GameAI(object):
 			depth += 1
 		print("[Console MSG] Time used by AI: " + str(timeElapsed))
 
+		# 기존의 board와 최적의 board에서 다른 부분이 현재 선택해야할 action
 		for row in range(0, 8):
 			for col in range(0, 8):
 				if board[row][col] != optimalBoard[row][col]:
@@ -232,9 +238,9 @@ class GameAI(object):
 					instabilityScale += 1
 
 				if instabilityScale >= 7:
-					stability[current - 1] -= 1;
+					stability[current - 1] -= 1
 				elif instabilityScale <= 3:
-					stability[current - 1] += 1;
+					stability[current - 1] += 1
 
 		whiteStability, blackStability = stability[1], stability[0]
 
