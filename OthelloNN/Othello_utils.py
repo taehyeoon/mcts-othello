@@ -25,8 +25,9 @@ def state2str(state):
                 str_state += 'w'
             elif state[i][j] == 1:
                 str_state += 'b'
-    return str_state            
+    return str_state           
 
+# 8 x 8 짜리 배열을 받아 오델로 판을 출력해주는 함수
 def show_state(state):
     output = "ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ\n"
     for i in range(len(state)):
@@ -74,6 +75,7 @@ def show_chosens(state,list_able):
         output += "\nㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ\n"
     print(output)
 
+# x,y 자리에 놓았을때 바뀌는 자리를 반환 / 잘못된 x,y를 입력할경우 False 와 None을 반환
 def check_set(state,x,y,turn):
     last = turn
     changes=[[x,y]]
@@ -272,6 +274,7 @@ def check_set(state,x,y,turn):
     else:
         return False, None
 
+# 놓을 수 있는 곳을 찾는 함수
 def check_able(state,turn):
     temp_ck = False
     temp_list = []
