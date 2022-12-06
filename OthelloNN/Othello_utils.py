@@ -282,5 +282,5 @@ def check_able(state,turn):
                 if temp_rs:
                     temp_ck=True
                     temp_list.append([i,j])
-    # show_chosens(state,temp_list)
-    return temp_ck, state
+    show_chosens(state,temp_list)
+    return temp_ck, temp_list
