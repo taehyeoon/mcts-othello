@@ -1,12 +1,18 @@
 import math
 import random
+from pprint import pprint
 
 BLACK = 1
 WHITE = -1
 EMPTY = 0
 STONE = {BLACK: '●', WHITE: '○', EMPTY: '.'}
 
-ITER = 500
+ITER = 100
+PRINT_INTERVAL = 10
+
+WIN_POINT = 1
+LOSE_POINT = 0
+DRAW_POINT = 0.5
 
 
 class Node:
@@ -37,6 +43,8 @@ class Node:
         self.score = 0
 
         # init current node's children
+        # key : 8*8의 2차원 리스트의 string ex) str(board.position)
+        # value : Node
         self.children = {}
 
 
@@ -44,27 +52,40 @@ class MCTS:
 
     def __init__(self):
         self.root = None
+        self.exploration_constant = math.sqrt(2)
 
-    def search(self, initial_state):
-        self.root = Node(initial_state, None)
+    def search(self, initial_board):
+        self.root = Node(initial_board, None)
 
         for iteration in range(ITER):
             node = self.select(self.root)
 
-            score = self.rollout(node.board)
+            # score = self.rollout(node.board)
+            result = self.rollout(node.board)
 
-            self.backpropagate(node, score)
-            if iteration % 100 == 0:
-                print(f"iter : {iteration}, score = {score}")
-        try:
-            return self.get_best_move(self.root, 2)
-        except:
-            pass
+            # self.backpropagate(node, score)
+            self.backpropagate(node, result)
+            if iteration % PRINT_INTERVAL == 0:
+                print(f"iter : {iteration}")
+                # print(f"child의 개수 : {len(self.root.children)}") # debug
+
+        print("-------------------------------------")
+        print(f"child 개수 : {len(self.root.children)}")
+        for key, val in self.root.children.items():
+            print("방문횟수 : ", end="")
+            print(val.visits)
+            print("UCT 값 : ", end="")
+            print(self.getUCT(val))
+            val.board.show_state()
+            print()
+        print("-------------------------------------")
+
+        return self.get_best_move(self.root)
 
     def select(self, node):
         while not node.is_terminal:
             if node.is_fully_expanded:
-                node = self.get_best_move(node, 2)
+                node = self.get_best_move(node)
             else:
                 return self.expand(node)
 
@@ -77,56 +98,80 @@ class MCTS:
         :param node: 확장할 노드
         :return: 확장한 child node
         """
-        states = node.board.generate_states()
+        # print(f"현재 노드의 차례 : {node.board.this_turn}") # debug
+        all_child_boards = node.board.generate_boards()
 
-        for state in states:
-            if str(state.position) not in node.children:
-                new_node = Node(state, node)
+        # print(f"type : {type(all_child_boards)}, len : {len(all_child_boards)}")  # debug
 
-                node.children[str(state.position)] = new_node
+        for board in all_child_boards:
+            if str(board.position) not in node.children:
+                new_node = Node(board, node)
 
-                if len(states) == len(node.children):
+                node.children[str(board.position)] = new_node
+
+                if len(all_child_boards) == len(node.children):
                     node.is_fully_expanded = True
 
+                # print(f"찾은 state의 개수 : {len(all_child_boards)}, 현재 노드의 child개수{len(node.children)}")  # debug
+                # board.show_state()  # debug
+                # print()
                 return new_node
 
     def rollout(self, board):
-        # next_turn = 2  # AI차례를 우선적으로 계산
         while not board.is_end():
             try:
-                next_states = board.generate_states()
+                next_boards = board.generate_boards()
                 # print(next_turn, end="")
-                board = random.choice(next_states)
+                board = random.choice(next_boards)
             except:
                 return 0
 
         # 방금 직전에 둔 돌은 player_2의 색깔
         # 게임이 종료되었다는 의미는 player_2가 두고나서 게임이 끝났다는 의미
-        if board.who_is_win() == 0:
-            return 0
-        if board.who_is_win() == 1:
-            return 1
-        if board.who_is_win() == -1:
-            return -1
 
-    def backpropagate(self, node, score):
+        # draw
+        if board.who_is_win() == 0:
+            score = DRAW_POINT
+            result = 'DRAW'
+        # 게임에서 이긴 색깔이 root node의 색과 같다면 승리한 것으로 판단
+        elif board.who_is_win() == self.root.board.this_turn:
+            score = WIN_POINT
+            result = 'WIN'
+        else:
+            score = LOSE_POINT
+            result = 'LOSE'
+
+        return result
+
+    def backpropagate(self, node, result):
         while node is not None:
+            if result == 'DRAW':
+                node.score += DRAW_POINT
+            else:
+                # root와 같은 차례의 노드에 게임결과를 반영
+                if node.board.this_turn == self.root.board.this_turn:
+                    if result == 'WIN':
+                        node.score += WIN_POINT
+                    else:
+                        node.score += LOSE_POINT
+                # root노드와 다른 차례의 노드에는 게임결과의 반대를 반영
+                else:
+                    if result == 'WIN':
+                        node.score += LOSE_POINT
+                    else:
+                        node.score += WIN_POINT
             node.visits += 1
-            node.score += score
             node = node.parent
 
-    def get_best_move(self, node, exploration_constant):
+    def get_best_move(self, node):
         best_score = float('-inf')
         best_moves = []
 
         for child_node in node.children.values():
-            if child_node.board.player_2 == BLACK:
-                current_player = BLACK
-            elif child_node.board.player_2 == WHITE:
-                current_player = WHITE
+            # move_score = child_node.score / child_node.visits \
+            #              + self.exploration_constant * math.sqrt(math.log(node.visits) / child_node.visits)
 
-            move_score = current_player * child_node.score / child_node.visits + exploration_constant * math.sqrt(
-                math.log(node.visits / child_node.visits))
+            move_score = self.getUCT(child_node)
 
             if move_score > best_score:
                 best_score = move_score
@@ -137,4 +182,9 @@ class MCTS:
                 best_moves.append(child_node)
 
         # return one of the best moves randomly
+        # 가장 좋은 move들 중 랜덤한게 한 노드를 반환
         return random.choice(best_moves)
+
+    def getUCT(self, node):
+        return node.score / node.visits \
+                         + self.exploration_constant * math.sqrt(math.log(node.parent.visits) / node.visits)
