@@ -44,7 +44,8 @@ class Node:
 
         # init current node's children
         # key : 8*8의 2차원 리스트의 string ex) str(board.position)
-        # value : Node
+        # value : [Node, action]
+        # action : (row, col)
         self.children = {}
 
 
@@ -69,6 +70,7 @@ class MCTS:
                 print(f"iter : {iteration}")
                 # print(f"child의 개수 : {len(self.root.children)}") # debug
 
+        '''
         print("-------------------------------------")
         print(f"child 개수 : {len(self.root.children)}")
         for key, val in self.root.children.items():
@@ -79,6 +81,7 @@ class MCTS:
             val.board.show_state()
             print()
         print("-------------------------------------")
+        '''
 
         return self.get_best_move(self.root)
 
@@ -87,7 +90,11 @@ class MCTS:
             if node.is_fully_expanded:
                 node = self.get_best_move(node)
             else:
-                return self.expand(node)
+                expanded_node = self.expand(node)
+                if expanded_node is not None:
+                    return expanded_node
+                else:
+                    node.board.swap_player()
 
         return node
 
@@ -99,15 +106,18 @@ class MCTS:
         :return: 확장한 child node
         """
         # print(f"현재 노드의 차례 : {node.board.this_turn}") # debug
-        all_child_boards = node.board.generate_boards()
+        all_child_boards, actions = node.board.generate_boards()
 
+        # 해당 턴에 둘 곳이 없는 경우
+        if len(all_child_boards) == 0:
+            return None
         # print(f"type : {type(all_child_boards)}, len : {len(all_child_boards)}")  # debug
 
-        for board in all_child_boards:
+        for board, action in zip(all_child_boards, actions):
             if str(board.position) not in node.children:
                 new_node = Node(board, node)
 
-                node.children[str(board.position)] = new_node
+                node.children[str(board.position)] = [new_node, action]
 
                 if len(all_child_boards) == len(node.children):
                     node.is_fully_expanded = True
@@ -120,7 +130,7 @@ class MCTS:
     def rollout(self, board):
         while not board.is_end():
             try:
-                next_boards = board.generate_boards()
+                next_boards = board.generate_boards()[0]
                 # print(next_turn, end="")
                 board = random.choice(next_boards)
             except:
@@ -167,10 +177,10 @@ class MCTS:
         best_score = float('-inf')
         best_moves = []
 
-        for child_node in node.children.values():
+        for child_data in node.children.values():
             # move_score = child_node.score / child_node.visits \
             #              + self.exploration_constant * math.sqrt(math.log(node.visits) / child_node.visits)
-
+            child_node = child_data[0]
             move_score = self.getUCT(child_node)
 
             if move_score > best_score:

@@ -102,20 +102,23 @@ class Board:
     def generate_boards(self):
         """
         현재 state에서 player가 둘 수 있는 action들을 구하고 해당 위치에 두었을 떄의 state를 리스트로 반환한다
-        :param player_num: 1 , 2
         :return:
         """
 
         next_states = []
+        actions = []
         # next_turn = BLACK if self.this_turn == WHITE else WHITE
         # availale, availale_pos_list = Utils.check_able(self.position, self.player_1)
         availale, availale_pos_list = Utils.check_able(self.position, self.this_turn)
         if availale:
             # print(f"착수 가능한 포지션 {availale_pos_list}, 현재 차례 : {self.this_turn}") # debug
             for row, col in availale_pos_list:
+                # print(f"{row}, {col}") #debug
                 next_states.append(self.make_move(row, col))
+                actions.append((row, col))
 
-            return next_states
+        return next_states, actions
+
 
     def is_end(self):
         end = False
@@ -134,52 +137,18 @@ class Board:
         mcts = MCTS()
 
         while True:
-            can_put_stone, lll = Utils.check_able(self.position, BLACK)
-            # print(lll)
-            # 플레이어가 둘 곳이 있는 경우
-            if can_put_stone:
-                print("PLAYER TURN")
-                self.show_state()
-                user_input = input('> ')
-
-                # escape condition
-                if user_input == 'exit':
-                    break
-
-                # skip empty input
-                if user_input == '':
-                    continue
-
-                try:
-                    # parse user input (move format [col][row]: 1,2)
-                    row = int(user_input.split(',')[1])
-                    col = int(user_input.split(',')[0])
-
-                    if self.position[row][col] != self.empty_square:
-                        print("Illegal move!!")
-                        continue
-
-                    possible_to_put, flip_list = Utils.check_set(self.position, row, col, BLACK)
-                    if possible_to_put:
-                        self = self.make_move(row, col)
-                    else:
-                        print("놓을 수 있는 자리가 아닙니다.")
-                        continue
-                except Exception as e:
-                    print('  Error:', e)
-                    print(traceback.format_exc())
-                    print('  Illegal command!')
-                    print('  Move format [x,y]: 1,2 where 1 is column and 2 is row')
-
+            print("BLACK") if self.this_turn == BLACK else print("WHITE")  # debug
+            print(Utils.check_able(self.position, self.this_turn)[1])
             self.show_state()
-            print("AI TURN")
 
-            # best_move는 Node형식
+            # 현재 차례가 둘 곳이 없는 경우 스킵
+            if not Utils.check_able(self.position, self.this_turn)[0]:
+                print("SKIP")  # debug
+                self.swap_player()
+                continue
+
             best_move = mcts.search(self)
-            try:
-                self = best_move.board
-            except:
-                pass
+            self = best_move.board
 
             # 플레이어 1,2 모두 둘 곳이 없는 경우
             if self.is_end():
