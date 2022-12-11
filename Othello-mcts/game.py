@@ -1,4 +1,6 @@
 import traceback
+import json
+import time
 from copy import deepcopy
 from pprint import pprint
 from OthelloNN import Othello_utils as Utils
@@ -46,7 +48,6 @@ class Board:
         else:
             raise Exception(f"func : make_move : ({row}, {col})은 {STONE[self.this_turn]}가 둘수 없는 자리입니다")
 
-
         # print("swap 실행") # debug
         # swap players
         # (result_board.player_1, result_board.player_2) = (result_board.player_2, result_board.player_1)
@@ -78,6 +79,7 @@ class Board:
             return WHITE
         else:
             return 0
+
     # 오직 is_end()에서만 사용하기 때문에 직접 구현하는 방식으로 수정
     # def hasPossiblePoint(self, player_num=1):
     #     """
@@ -119,7 +121,6 @@ class Board:
 
         return next_states, actions
 
-
     def is_end(self):
         end = False
         can_black_put = Utils.check_able(self.position, self.player_1)[0]
@@ -135,6 +136,8 @@ class Board:
         print("\n\n")
 
         mcts = MCTS()
+        # 게임 기록에 관한 데이터를 저장
+        history = []
 
         while True:
             print("BLACK") if self.this_turn == BLACK else print("WHITE")  # debug
@@ -149,19 +152,49 @@ class Board:
 
             best_move = mcts.search(self)
             self = best_move.board
+            history.append(mcts.get_data())
 
             # 플레이어 1,2 모두 둘 곳이 없는 경우
             if self.is_end():
-                result = self.who_is_win()
-                if result == 1:
-                    print("BLACK is win")
-                    break
-                elif result == -1:
-                    print("WHITE is win")
-                    break
-                else:
-                    print("draw")
-                    break
+                break
+
+        self.show_state()
+        result = self.who_is_win()
+        if result == 1:
+            print("BLACK is win")
+        elif result == -1:
+            print("WHITE is win")
+        else:
+            print("draw")
+
+        data_to_be_stored = []
+        for idx, data in enumerate(history):
+            move = dict()
+            move['state'] = data[0]
+            if idx == 1:
+                move['uct'] = 0
+            else:
+                move['uct'] = history[idx-1][1]
+
+            actions = []
+            for val in data[2]:
+                action_data = dict()
+                action_data['action'] = str(val[0]) + "," + str(val[1])
+                action_data['count'] = val[2]
+                actions.append(action_data)
+            move['actions'] = actions
+
+            move['reward'] = data[3]
+            move['turn'] = data[4]
+            data_to_be_stored.append(move)
+
+            # for item in data:
+            #     print(item)
+            # print("-------------------------------------")
+
+        filename = 'game1.json'
+        with open(filename, 'w', encoding='utf-8') as make_file:
+            json.dump(data_to_be_stored, make_file, indent='\t')
 
     def show_state(self):
         print("\t", end="")
@@ -177,9 +210,10 @@ class Board:
 
 
 if __name__ == "__main__":
+    start = time.time()
     board = Board(turn=BLACK)
     board.game_loop()
-
+    print("소요시간(초) : ", time.time() - start)
 
 """
 BLACK이 둘 곳이 없는 경우
@@ -196,12 +230,12 @@ self.position = [
             
 # 임의의 게임 state            
 self.position = [
-                [BLACK, WHITE, BLACK, WHITE, WHITE, WHITE, WHITE, WHITE],
+                [BLACK, WHITE, BLACK, WHITE, WHITE, WHITE, WHITE, EMPTY],
                 [WHITE, BLACK, EMPTY, BLACK, BLACK, WHITE, WHITE, WHITE],
-                [BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, WHITE, WHITE],
+                [BLACK, BLACK, BLACK, BLACK, EMPTY, BLACK, WHITE, WHITE],
                 [BLACK, WHITE, BLACK, WHITE, BLACK, BLACK, EMPTY, WHITE],
-                [BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, WHITE],
-                [BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, EMPTY, WHITE],
+                [BLACK, EMPTY, BLACK, BLACK, BLACK, BLACK, BLACK, WHITE],
+                [EMPTY, BLACK, BLACK, EMPTY, BLACK, BLACK, EMPTY, WHITE],
                 [BLACK, WHITE, BLACK, BLACK, WHITE, WHITE, WHITE, EMPTY],
                 [BLACK, EMPTY, BLACK, WHITE, WHITE, BLACK, WHITE, BLACK]
             ]

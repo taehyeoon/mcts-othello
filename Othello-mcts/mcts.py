@@ -10,9 +10,9 @@ STONE = {BLACK: '●', WHITE: '○', EMPTY: '.'}
 ITER = 100
 PRINT_INTERVAL = 10
 
-WIN_POINT = 1
+WIN_POINT = 10
 LOSE_POINT = 0
-DRAW_POINT = 0.5
+DRAW_POINT = 3
 
 
 class Node:
@@ -54,8 +54,10 @@ class MCTS:
     def __init__(self):
         self.root = None
         self.exploration_constant = math.sqrt(2)
+        self.selected_child_node = None
 
     def search(self, initial_board):
+        self.selected_child_node = None
         self.root = Node(initial_board, None)
 
         for iteration in range(ITER):
@@ -70,20 +72,20 @@ class MCTS:
                 print(f"iter : {iteration}")
                 # print(f"child의 개수 : {len(self.root.children)}") # debug
 
-        '''
+
         print("-------------------------------------")
         print(f"child 개수 : {len(self.root.children)}")
         for key, val in self.root.children.items():
             print("방문횟수 : ", end="")
-            print(val.visits)
+            print(val[0].visits)
             print("UCT 값 : ", end="")
-            print(self.getUCT(val))
-            val.board.show_state()
+            print(self.get_uct(val[0]))
+            val[0].board.show_state()
             print()
         print("-------------------------------------")
-        '''
 
-        return self.get_best_move(self.root)
+        self.selected_child_node = self.get_best_move(self.root)
+        return self.selected_child_node
 
     def select(self, node):
         while not node.is_terminal:
@@ -181,7 +183,7 @@ class MCTS:
             # move_score = child_node.score / child_node.visits \
             #              + self.exploration_constant * math.sqrt(math.log(node.visits) / child_node.visits)
             child_node = child_data[0]
-            move_score = self.getUCT(child_node)
+            move_score = self.get_uct(child_node)
 
             if move_score > best_score:
                 best_score = move_score
@@ -195,6 +197,26 @@ class MCTS:
         # 가장 좋은 move들 중 랜덤한게 한 노드를 반환
         return random.choice(best_moves)
 
-    def getUCT(self, node):
+    def get_uct(self, node):
         return node.score / node.visits \
                          + self.exploration_constant * math.sqrt(math.log(node.parent.visits) / node.visits)
+
+    def get_data(self):
+        # data = [8*8 list, [child의 uct값], [[r,c,n], [r,c,n], ...], reward, turn(1 or -1)]
+        data = []
+        data.append(self.root.board.position)
+        data.append(self.get_uct(self.selected_child_node))
+        child_list = []
+        for child_node, action in self.root.children.values():
+            child_list.append([action[0], action[1], child_node.visits])
+        data.append(child_list)
+        data.append(self.selected_child_node.score)
+        data.append(self.root.board.this_turn)
+
+        return data
+
+
+
+
+
+
