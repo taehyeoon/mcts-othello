@@ -1,8 +1,10 @@
 from copy import deepcopy
 from OthelloNN import Othello_utils as Utils
+from OthelloNN import OthelloNNet
 from mcts import *
 import json
 import time
+import os
 
 BLACK = 1
 WHITE = -1
@@ -93,13 +95,13 @@ class Board:
 
         return not can_black_put and not can_white_put
 
-    def game_loop(self):
+    def game_loop(self,model):
         print("OTHELLO GAME")
         print("TYPE \'exit\' to quit game")
         print('Move format [x,y]: 1,2 where 1 is column and 2 is row')
         print("\n")
-
-        mcts = MCTS()
+        
+        mcts = MCTS(model)
         # 게임 기록에 관한 데이터를 저장
         history = []
 
@@ -113,7 +115,7 @@ class Board:
                 self.swap_player()
                 continue
 
-            next_node = mcts.search(self)
+            next_node = mcts.search(self,history)
             self = next_node.board
             history.append(mcts.get_data())
 
@@ -155,6 +157,8 @@ class Board:
         filename = 'game1.json'
         with open(filename, 'w', encoding='utf-8') as make_file:
             json.dump(data_to_be_stored, make_file, indent='\t')
+        
+        return data_to_be_stored
 
     def show_state(self):
         print("\t", end="")
@@ -172,7 +176,14 @@ class Board:
 if __name__ == "__main__":
     start = time.time()
     board = Board(turn=BLACK)
-    board.game_loop()
+    
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = OthelloNNet.ConnectNet().to(device)
+    if os.path.isfile('model.pth'):
+        checkpoint = torch.load('model.pth')
+        model.load_state_dict(checkpoint['state_dict'])
+
+    board.game_loop(model)
     print("소요시간(초) : ", time.time() - start)
 
 """

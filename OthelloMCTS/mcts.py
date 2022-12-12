@@ -1,5 +1,7 @@
 import math
 import random
+import torch
+import numpy as np
 
 BLACK = 1
 WHITE = -1
@@ -38,16 +40,17 @@ class Node:
 
 class MCTS:
 
-    def __init__(self):
+    def __init__(self,model):
         self.root = None
+        self.model = model
         self.exploration_constant = math.sqrt(2)
         # root node에서 uct에 의해 선택된 노드 저장
         self.selected_child_node = None
 
-    def search(self, initial_board):
+    def search(self, initial_board,history):
         self.selected_child_node = None
         self.root = Node(initial_board, None)
-
+        
         for iteration in range(ITER):
             # 현재 트리의 root에서 마지막 노드까지 uct를 기준으로 select
             node = self.select(self.root)
@@ -67,8 +70,57 @@ class MCTS:
             val[0].board.show_state()
             print()
         print("-------------------------------------")
+        
+        # self.selected_child_node = self.get_best_move(self.root)
+        # 수정
 
-        self.selected_child_node = self.get_best_move(self.root)
+        #이전 기록 가져오기, NNet 인풋 만들기
+        b_history = []
+        w_history = []
+        turn = 0
+        for s in history[::-1]:
+            if s[-1] == turn:
+                if turn == BLACK:
+                    w_history.append(b_history[-1])
+                else:
+                    b_history.append(w_history[-1])
+            
+            if len(b_history) == 8 and len(w_history) == 8:
+                break
+            s[-1] = turn
+            if turn == BLACK:
+                b_history.append(s[0])
+            else:
+                w_history.append(s[0])
+            if len(b_history) == 8 and len(w_history) == 8:
+                break
+        input = [[[0 for _ in range(8)] for _ in range(8)] for _ in range(16)]
+        for i, bs in enumerate(b_history):
+            input[i] = bs
+        for i, ws in enumerate(w_history):
+            input[i+8] = ws
+        input.append([[self.root.board.this_turn for _ in range(8)] for _ in range(8)])
+
+        # NNet에 넣기
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        input = torch.tensor(input).float().to(device)
+        self.model.eval()
+        pi,v=self.model(input)
+
+        # pi를 통해 확률적으로 다음 노드 선택
+        action_node = []
+        action_p = []
+        action_n= []
+        for i, child in enumerate(self.root.children.values()):
+            action_p.append(pi[0][child[1][0]*8+child[1][1]].item())
+            action_n.append(child[0].visits)
+            action_node.append(child[0])
+        action_p = np.array(action_p)
+        action_p = action_p/np.sum(action_p)
+        print(action_p)
+        print(action_n)
+        self.selected_child_node = action_node[np.random.choice(i+1,p=action_p)]
+
         return self.selected_child_node
 
     def select(self, node):
