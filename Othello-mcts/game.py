@@ -113,8 +113,8 @@ class Board:
                 self.swap_player()
                 continue
 
-            best_move = mcts.search(self)
-            self = best_move.board
+            next_node = mcts.search(self)
+            self = next_node.board
             history.append(mcts.get_data())
 
             # 흑, 백 모두 둘 곳이 없는 경우
