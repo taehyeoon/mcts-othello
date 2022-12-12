@@ -171,7 +171,7 @@ class Board:
         for idx, data in enumerate(history):
             move = dict()
             move['state'] = data[0]
-            if idx == 1:
+            if idx == 0:
                 move['uct'] = 0
             else:
                 move['uct'] = history[idx-1][1]
