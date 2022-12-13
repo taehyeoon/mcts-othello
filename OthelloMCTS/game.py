@@ -1,7 +1,7 @@
 from copy import deepcopy
 from OthelloNN import Othello_utils as Utils
 from OthelloNN import OthelloNNet
-from mcts import *
+from OthelloMCTS.mcts import *
 import json
 import time
 import os
@@ -95,42 +95,54 @@ class Board:
 
         return not can_black_put and not can_white_put
 
-    def game_loop(self,model):
-        print("OTHELLO GAME")
-        print("TYPE \'exit\' to quit game")
-        print('Move format [x,y]: 1,2 where 1 is column and 2 is row')
-        print("\n")
+    def game_loop(self,pn):
+        # print("OTHELLO GAME")
+        # print("TYPE \'exit\' to quit game")
+        # print('Move format [x,y]: 1,2 where 1 is column and 2 is row')
+        # print("\n")
         
+        filename = 'games/game'+str(pn)+'.json'
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model=OthelloNNet.ConnectNet().to(device)
+        if os.path.isfile('model.pth'):
+            checkpoint = torch.load('model.pth')
+            model.load_state_dict(checkpoint['model_state_dict'])
+
         mcts = MCTS(model)
         # 게임 기록에 관한 데이터를 저장
         history = []
 
         while True:
-            print("BLACK") if self.this_turn == BLACK else print("WHITE")  # debug
-            print(Utils.check_able(self.position, self.this_turn)[1])
-            self.show_state()
+            # print("BLACK") if self.this_turn == BLACK else print("WHITE")  # debug
+            # print(Utils.check_able(self.position, self.this_turn)[1])
+            # self.show_state()
 
             # 현재 차례가 둘 곳이 없는 경우 스킵
             if not Utils.check_able(self.position, self.this_turn)[0]:
                 self.swap_player()
                 continue
-
+            temp = self.this_turn
             next_node = mcts.search(self,history)
+            if next_node.board.this_turn == temp:
+                history.append([next_node.board.position,0,[],0, self.this_turn*(-1)])
             self = next_node.board
             history.append(mcts.get_data())
 
             # 흑, 백 모두 둘 곳이 없는 경우
             if self.is_end():
+                # for history_data in history:
+                #     print(history_data[-1])
+                # print(len(history))
                 break
 
-        self.show_state()
-        result = self.who_is_win()
-        if result == 1:
-            print("BLACK is win")
-        elif result == -1:
-            print("WHITE is win")
-        else:
-            print("DRAW")
+        # self.show_state()
+        # result = self.who_is_win()
+        # if result == 1:
+        #     print("BLACK is win")
+        # elif result == -1:
+        #     print("WHITE is win")
+        # else:
+        #     print("DRAW")
 
         # JSON에 저장되는 데이터 리스트
         data_to_be_stored = []
@@ -154,7 +166,6 @@ class Board:
             move['turn'] = data[4]
             data_to_be_stored.append(move)
 
-        filename = 'game1.json'
         with open(filename, 'w', encoding='utf-8') as make_file:
             json.dump(data_to_be_stored, make_file, indent='\t')
         
