@@ -1,5 +1,6 @@
 import json
 import tqdm
+import copy
 import Othello_utils
 
 f=open('기보데이터/raw_data.txt','r')
@@ -25,11 +26,13 @@ for data in raw_datas:
     turn = 1
     temp_datas = []
     name=''
+    str_state_list =[]
     for step in data:
         x,y=ord(step[0])-ord('a'),int(step[1])-1
         
         str_state = Othello_utils.state2str(state)
-        temp_datas.append({'name':name,'state':str_state,'next_name':name+step,'x':x,'y':y, 'turn':turn})
+        str_state_list.append(str_state)
+        temp_datas.append({'name':name,'state':copy.deepcopy(str_state_list),'next_name':name+step,'x':x,'y':y, 'turn':turn})
 
         _,state=Othello_utils.check_set(state,x,y,turn)
         res,_=Othello_utils.check_able(state,turn*(-1))

@@ -59,17 +59,17 @@ class MCTS:
             result = self.rollout(node.board)
 
             self.backpropagate(node, result)
-            if iteration % PRINT_INTERVAL == 0:
-                print(f"iter : {iteration}")
+            # if iteration % PRINT_INTERVAL == 0:
+                # print(f"iter : {iteration}")
 
-        print("-------------------------------------")
-        print(f"child 개수 : {len(self.root.children)}")
-        for key, val in self.root.children.items():
-            print(f"방문횟수 : {val[0].visits}")
-            print(f"UCT 값 : {self.get_uct(val[0])}")
-            val[0].board.show_state()
-            print()
-        print("-------------------------------------")
+        # print("-------------------------------------")
+        # print(f"child 개수 : {len(self.root.children)}")
+        # for key, val in self.root.children.items():
+        #     print(f"방문횟수 : {val[0].visits}")
+        #     print(f"UCT 값 : {self.get_uct(val[0])}")
+        #     val[0].board.show_state()
+        #     print()
+        # print("-------------------------------------")
         
         # self.selected_child_node = self.get_best_move(self.root)
         # 수정
@@ -77,18 +77,14 @@ class MCTS:
         #이전 기록 가져오기, NNet 인풋 만들기
         b_history = []
         w_history = []
-        turn = 0
+
+        if self.root.board.this_turn == BLACK:
+            b_history.append(self.root.board.position)
+        else:
+            w_history.append(self.root.board.position)
+
         for s in history[::-1]:
-            if s[-1] == turn:
-                if turn == BLACK:
-                    w_history.append(b_history[-1])
-                else:
-                    b_history.append(w_history[-1])
-            
-            if len(b_history) == 8 and len(w_history) == 8:
-                break
-            s[-1] = turn
-            if turn == BLACK:
+            if s[-1] == BLACK:
                 b_history.append(s[0])
             else:
                 w_history.append(s[0])
@@ -117,8 +113,6 @@ class MCTS:
             action_node.append(child[0])
         action_p = np.array(action_p)
         action_p = action_p/np.sum(action_p)
-        print(action_p)
-        print(action_n)
         self.selected_child_node = action_node[np.random.choice(i+1,p=action_p)]
 
         return self.selected_child_node
