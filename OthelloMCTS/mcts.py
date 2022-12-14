@@ -42,7 +42,7 @@ class MCTS:
 
     def __init__(self,model):
         self.root = None
-        self.model = model
+        self.model = model.to('cpu')
         self.exploration_constant = math.sqrt(2)
         # root node에서 uct에 의해 선택된 노드 저장
         self.selected_child_node = None
@@ -98,8 +98,7 @@ class MCTS:
         input.append([[self.root.board.this_turn for _ in range(8)] for _ in range(8)])
 
         # NNet에 넣기
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        input = torch.tensor(input).float().to(device)
+        input = torch.tensor(input).float().to('cpu')
         self.model.eval()
         pi,v=self.model(input)
 
