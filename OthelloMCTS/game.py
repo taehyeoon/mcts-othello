@@ -95,18 +95,18 @@ class Board:
 
         return not can_black_put and not can_white_put
 
-    def game_loop(self,pn):
+    def game_loop(self,path,model,isExit):
         # print("OTHELLO GAME")
         # print("TYPE \'exit\' to quit game")
         # print('Move format [x,y]: 1,2 where 1 is column and 2 is row')
         # print("\n")
         
-        filename = 'games/game'+str(pn)+'.json'
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        model=OthelloNNet.ConnectNet().to(device)
-        if os.path.isfile('model.pth'):
-            checkpoint = torch.load('model.pth')
-            model.load_state_dict(checkpoint['model_state_dict'])
+        filename = path
+        # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # model=OthelloNNet.ConnectNet().to(device)
+        # if os.path.isfile('model.pth'):
+        #     checkpoint = torch.load('model.pth')
+        #     model.load_state_dict(checkpoint['model_state_dict'])
 
         mcts = MCTS(model)
         # 게임 기록에 관한 데이터를 저장
@@ -168,8 +168,9 @@ class Board:
 
         with open(filename, 'w', encoding='utf-8') as make_file:
             json.dump(data_to_be_stored, make_file, indent='\t')
-        
-        return data_to_be_stored
+        if isExit:
+            exit()
+        # return data_to_be_stored
 
     def show_state(self):
         print("\t", end="")
