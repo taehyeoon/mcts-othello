@@ -3,19 +3,20 @@ import time
 
 
 class GameAI(object):
-	def __init__(self, game):
+	def __init__(self, game, player):
 		super().__init__()
 		self.game = game
 		self.move = (-1,-1)
-		self.timeLimit = 3  # 3 seconds is the time limit for search
+		self.timeLimit = 1  # 3 seconds is the time limit for search
 		self.debug = False  # True for debugging
+		self.player = player
 
 	# AI perform move (there must be an available move due to the pre-move check)
 	def performMove(self):
 		# Iterative Deepening MiniMax Search with Alpha-Beta Pruning
 		tmpBoard = [row[:] for row in self.game.board] # we don't want to make changes to the game board
 		self.move = self.miniMax(tmpBoard)
-
+		print("player",self.player,"move: ", self.move)
 		# perform move (there must be an available move)
 		self.game.performMove(self.move[0], self.move[1])
 
@@ -29,22 +30,22 @@ class GameAI(object):
 
 		# 각 모서리를 우선적으로 탐색하여 4개의 모서리 중 가장 많은 돌을 뒤집을 수 있는 위치를 action으로 선택
 		if board[0][0] == 0:
-			flippingAtCorner = self.game.placePiece(board, 0, 0, 2, PLAYMODE=False)
+			flippingAtCorner = self.game.placePiece(board, 0, 0, self.player, PLAYMODE=False)
 			if flippingAtCorner > optimalFlipping:
 				optimalFlipping = flippingAtCorner
 				optimalMove = (0, 0)
 		if board[7][0] == 0:
-			flippingAtCorner = self.game.placePiece(board, 7, 0, 2, PLAYMODE=False)
+			flippingAtCorner = self.game.placePiece(board, 7, 0, self.player, PLAYMODE=False)
 			if flippingAtCorner > optimalFlipping:
 				optimalFlipping = flippingAtCorner
 				optimalMove = (7, 0)
 		if board[0][7] == 0:
-			flippingAtCorner = self.game.placePiece(board, 0, 7, 2, PLAYMODE=False)
+			flippingAtCorner = self.game.placePiece(board, 0, 7, self.player, PLAYMODE=False)
 			if flippingAtCorner > optimalFlipping:
 				optimalFlipping = flippingAtCorner
 				optimalMove = (0, 7)
 		if board[7][7] == 0:
-			flippingAtCorner = self.game.placePiece(board, 7, 7, 2, PLAYMODE=False)
+			flippingAtCorner = self.game.placePiece(board, 7, 7, self.player, PLAYMODE=False)
 			if flippingAtCorner > optimalFlipping:
 				optimalFlipping = flippingAtCorner
 				optimalMove = (7, 7)
@@ -60,7 +61,7 @@ class GameAI(object):
 
 		# 멈추는 한계 depth까지 오지 않고, 시간이 초과되지 않는 동안 반복 탐색
 		while not stopDigging and timeElapsed < self.timeLimit:
-			(stopDigging, optimalBoard) = self.IDMiniMax(board, 0, depth, 2, -math.inf, math.inf);
+			(stopDigging, optimalBoard) = self.IDMiniMax(board, 0, depth, self.player, -math.inf, math.inf);
 			endTime = time.time()
 			timeElapsed += endTime - startTime
 			startTime = endTime
@@ -98,7 +99,7 @@ class GameAI(object):
 		if player == 2:
 			maxValue = -math.inf
 			for idx in range(0, len(successorBoards)):
-				stopDigging, lookaheadBoard = self.IDMiniMax(successorBoards[idx], currentLevel+1, maxLevel, 1, alpha, beta)
+				stopDigging, lookaheadBoard = self.IDMiniMax(successorBoards[idx], currentLevel+1, maxLevel, 1 , alpha, beta)
 				utility = self.utilityOf(lookaheadBoard)
 				if utility > maxValue:
 					maxValue = utility

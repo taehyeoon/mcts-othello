@@ -18,7 +18,7 @@ EMPTY = 0
 STONE = {BLACK: '●', WHITE: '○', EMPTY: '.'}
 GAMEPATH = "H:/내 드라이브/OSSP2/games/"
 MODELPATH = "H:/내 드라이브/OSSP2/model/"
-MCTSNUM=20
+MCTSNUM=10
 MACINE_NAME='Main'
 torch.autograd.set_detect_anomaly(True)
 
@@ -27,11 +27,11 @@ if __name__ == '__main__':
     freeze_support()
 
     epochs=300
-    batch_count=32
+    batch_count=16
 
-    process_num=5
+    process_num=10
 
-    total_game=0
+    total_game=400
 
     for file in os.listdir(GAMEPATH):
         os.remove(GAMEPATH+file)
@@ -50,12 +50,14 @@ if __name__ == '__main__':
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         }, 'model.pth')
-    data_set = []
+    
     
     for file in os.listdir(MODELPATH):
         os.remove(MODELPATH+file)
+
     # time.sleep(30)
-    for g in range(20):
+    for g in range(10000):
+        data_set = []
         print(str(g)+':번째 반복 || MCTS 게임:' + str(total_game) + '번')
         
         #mcts로 데이터생성
@@ -116,6 +118,8 @@ if __name__ == '__main__':
                         ck=False
                         break
                 if ck:
+                    for pp in p_list:
+                        pp.join()
                     break
             for pp in p_list:
                 pp.kill()
@@ -125,6 +129,11 @@ if __name__ == '__main__':
         for file in os.listdir(MODELPATH):
             os.remove(MODELPATH+file)
         
+
+
+
+
+
 
         progress_bar = tqdm.tqdm(total=len(os.listdir(GAMEPATH)))
         progress_bar.set_description('MCTS데이터 변환중')
@@ -166,6 +175,9 @@ if __name__ == '__main__':
         print('샘플수: ',len(data_set))
         model.train()
         print('학습시작')
+
+
+        
         progress_bar = tqdm.tqdm(total=epochs)
         for epoch in range(epochs):
             random.shuffle(data_set)
@@ -184,11 +196,14 @@ if __name__ == '__main__':
             
                 # print('epoch: {}, batch: {}, loss: {}'.format(epoch,batch,loss.item()))
                 progress_bar.set_description('batch: {}, loss: {}'.format(batch,loss.item()))
-                
-            torch.save({
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict()
-            }, 'model.pth')
+            optimizer.zero_grad()
+            try:
+                torch.save({
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict()
+                }, 'model.pth')
+            except:
+                pass
             progress_bar.update(1)
         progress_bar.close()
 
