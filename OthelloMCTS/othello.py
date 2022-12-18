@@ -1,7 +1,6 @@
 from OthelloMCTS import ai
 from OthelloMCTS import alpha_ai
 from OthelloMCTS import mcts
-from OthelloMCTS import user
 import sys
 import torch
 
