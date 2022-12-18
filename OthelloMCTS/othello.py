@@ -1,5 +1,10 @@
-import ai
-import mcts
+from OthelloMCTS import ai
+from OthelloMCTS import alpha_ai
+from OthelloMCTS import mcts
+import sys
+import torch
+
+import copy
 
 class IllegalMove(Exception):
     def __init__(self, message):
@@ -19,17 +24,32 @@ class Othello(object):
         self.whiteTiles = 2
         self.blackTiles = 1
 
-        self.board = [[0 for x in range(8)] for x in range(8)]
-        self.board[3][3] = 1
-        self.board[3][4] = 2
-        self.board[4][3] = 2
-        self.board[4][4] = 1
+        # self.board = [[0 for x in range(8)] for x in range(8)]
+        self.board=[
+                    [0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0],
+                    [0,0,0,1,2,0,0,0],
+                    [0,0,0,2,1,0,0,0],
+                    [0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0],]
+        # self.board[3][3] = 1
+        # self.board[3][4] = 2
+        # self.board[4][3] = 2
+        # self.board[4][4] = 1
         # set useAI = False to disable AI opponent - two-player mode
-        self.useAI = True
+        self.useAI = False
+
+        self.history = []  # history of moves
 
         # set up AI - player-computer mode
         # self.ai = ai.GameAI(self)
-        self.ai = mcts.mcts(self)
+        # self.ai = mcts.mcts(self)
+        # self.ai = alpha_ai.GameAI(self)
+        self.ai1 = ai.GameAI(self,1)
+        self.ai2 = ai.GameAI(self,2)
+        self.alpha_ai = alpha_ai.GameAI(self,'model-.pth')
 
         self.changed = True
         self.AIReadyToMove = False
@@ -41,14 +61,32 @@ class Othello(object):
         # 게임 종료 or (ai를 사용하고 사용자의 턴이 아닌경우)
         if self.victory != 0 or (self.useAI and self.player != 1):
             return
+        
+        # if the move is illegal
 
-        self.performMove(x, y)
+        # ai를 사용해서 나온 x,y를 performMove x,y 대입
+        if len(self.history)>0:
+            if self.history[-1]['turn']==self.player:
+                self.history.append(self.history[-1])
+                self.history[-1]['turn']=3-self.player
+        self.history.append({'state':copy.deepcopy(self.board),'turn':copy.deepcopy(self.player)})
+
+        # if self.player == 1:
+        #     self.ai1.performMove()
+        if self.player == 1:
+            self.alpha_ai.performMove(self.history)
+        elif self.player == 2:
+            self.ai2.performMove()
+
+
+
+        # self.performMove(x, y)
 
         # AI's turn and AI is ready to move
-        if self.useAI and self.player == 2:
-            self.AIReadyToMove = True
-            if self.debug:
-                print("AI is ready to move!")
+        # if self.useAI and self.player == 2:
+        #     self.AIReadyToMove = True
+        #     if self.debug:
+        #         print("AI is ready to move!")
 
     def performMove(self, x, y):
         if self.debug:
@@ -111,7 +149,7 @@ class Othello(object):
             # 상대방이 둘 곳이 있는 경우
             else:
                 # opponent can move, alternate between player 1 and 2
-                self.player = 3 - self.player
+                self.player = 3 - self.player # 플레이어 변경
                 self.changed = True
 
     def moveCanBeMade(self, board, playerID):
