@@ -1,10 +1,14 @@
 from OthelloMCTS import ai
 from OthelloMCTS import alpha_ai
 from OthelloMCTS import mcts
+from OthelloMCTS import user
 import sys
 import torch
 
 import copy
+
+ALPHAZERO = 'alpha'
+MINMAX = 'minmax'
 
 class IllegalMove(Exception):
     def __init__(self, message):
@@ -16,7 +20,7 @@ class Othello(object):
     # 1 - Black (Player 1)
     # 2 - White (Player 2)
 
-    def __init__(self):
+    def __init__(self,ai_info):
         super().__init__()
 
         self.player = 1
@@ -47,10 +51,19 @@ class Othello(object):
         # self.ai = ai.GameAI(self)
         # self.ai = mcts.mcts(self)
         # self.ai = alpha_ai.GameAI(self)
+
         self.ai1 = ai.GameAI(self,1)
         self.ai2 = ai.GameAI(self,2)
-        self.alpha_ai = alpha_ai.GameAI(self,'model-.pth')
 
+        if ai_info[0]==ALPHAZERO:
+            self.ai1 = alpha_ai.GameAI(self,'model/latest_model.pth')
+        elif ai_info[0]==MINMAX:
+            self.ai1 = ai.GameAI(self,1)
+
+        if ai_info[1]==ALPHAZERO:
+            self.ai2 = alpha_ai.GameAI(self,'model/latest_model.pth')
+        elif ai_info[1]==MINMAX:
+            self.ai2 = ai.GameAI(self,2)
         self.changed = True
         self.AIReadyToMove = False
 
@@ -65,6 +78,7 @@ class Othello(object):
         # if the move is illegal
 
         # ai를 사용해서 나온 x,y를 performMove x,y 대입
+        
         if len(self.history)>0:
             if self.history[-1]['turn']==self.player:
                 self.history.append(self.history[-1])
@@ -74,9 +88,10 @@ class Othello(object):
         # if self.player == 1:
         #     self.ai1.performMove()
         if self.player == 1:
-            self.alpha_ai.performMove(self.history)
+            self.ai1.performMove(self.history)
         elif self.player == 2:
-            self.ai2.performMove()
+            self.ai2.performMove(self.history)
+            # self.user.performMove()
 
 
 
