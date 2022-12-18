@@ -12,7 +12,7 @@ class GameAI(object):
 		self.player = player
 
 	# AI perform move (there must be an available move due to the pre-move check)
-	def performMove(self):
+	def performMove(self, history):
 		# Iterative Deepening MiniMax Search with Alpha-Beta Pruning
 		tmpBoard = [row[:] for row in self.game.board] # we don't want to make changes to the game board
 		self.move = self.miniMax(tmpBoard)

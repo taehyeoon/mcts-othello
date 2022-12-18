@@ -5,7 +5,6 @@ import torch
 import numpy as np
 from OthelloNN import OthelloNNet
 from OthelloNN import Othello_utils
-	
 
 class GameAI(object):
 	def __init__(self, game,model_path):
@@ -17,7 +16,7 @@ class GameAI(object):
 		model = OthelloNNet.ConnectNet()
 		self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 		if model_path is not None:
-			checkpoint = torch.load('model.pth', map_location=self.device)
+			checkpoint = torch.load(model_path, map_location=self.device)
 			model.load_state_dict(checkpoint['model_state_dict'])
 		self.model = model
 		self.model.to(self.device)
