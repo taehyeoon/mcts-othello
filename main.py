@@ -1,6 +1,7 @@
 import math
 import sys
 import time
+import copy
 
 import pygame
 
@@ -24,9 +25,9 @@ class Game_Engine(object):
         self.images = {}  # image resources
         self.keys_down = {}  # records of down-keys
 
-        self.player_info =[AI,AI]
+        self.player_info =[AI,HUMAN]
 
-        self.AI_info=[ALPHAZERO,MINMAX]
+        self.AI_info=[ALPHAZERO,ALPHAZERO]
 
         # create game object
         self.game = othello.Othello(self.AI_info)
@@ -212,6 +213,11 @@ class Game_Engine(object):
                 print("player " + str(self.game.player) + " x: " + str(chessman_x) + " y: " + str(chessman_y))
 
             try:
+                if len(self.game.history)>0:
+                    if self.game.history[-1]['turn']==self.game.player:
+                        self.game.history.append(self.game.history[-1])
+                        self.game.history[-1]['turn']=3-self.game.player
+                self.game.history.append({'state':copy.deepcopy(self.game.board),'turn':copy.deepcopy(self.game.player)})
                 self.game.performMove(chessman_x, chessman_y)
             except othello.IllegalMove as e:
                 print("Illegal Move " + e.message)
